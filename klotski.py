@@ -259,15 +259,11 @@ def get_board_piece_at_ij(board, ij_tuple):
   return None
 
 
-def remove_cycles(state_sequence):#, third=True):
+def remove_cycles(state_sequence):
   """ Removes cycles from a given sequence of states. """
   states_hashed = np.array([hash(state.tostring())
                             for state in state_sequence])
   unique_states = np.unique(states_hashed)
-  # if third:
-  #   iter_unique = len(unique_states)//3;
-  # else:
-  #   iter_unique = len(unique_states)
   for i in range(len(unique_states)):
     curr_state_idxs = np.where(states_hashed == unique_states[i])[0]
     if len(curr_state_idxs) > 1:
