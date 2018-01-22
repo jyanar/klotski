@@ -230,8 +230,8 @@ def get_board_piece_at_ij(board, ij_tuple):
   i, j = ij_tuple
 
   if board[i,j] == 0: return ()
-  if board[i,j] == 1: return (1, i, j)
-  if board[i,j] == 2:
+  elif board[i,j] == 1: return (1, i, j)
+  elif board[i,j] == 2:
     if i == 0: return (2, i, j)
     elif i == 4: return (2, i-1, j)
     else:
@@ -246,7 +246,7 @@ def get_board_piece_at_ij(board, ij_tuple):
           return (2, i-1, j)
         elif p[1]-1 == i:
           return (2, i+1, j)
-  if board[i,j] == 3:
+  elif board[i,j] == 3:
     if j == 3:
       return (3, i, j-1)
     elif j == 0:
@@ -254,9 +254,9 @@ def get_board_piece_at_ij(board, ij_tuple):
     else:
       three_idx = np.where(board == 3)
       return (3, three_idx[0][0], three_idx[1][0])
-  if board[i,j] == 4:
+  elif board[i,j] == 4:
     return get_board_pieces_of_type_a(board, 4)[0]
-  return 'FAILED'
+  return None
 
 
 def remove_cycles(state_sequence):#, third=True):
@@ -294,11 +294,11 @@ def find_solution_path(board, solns):
     piece_posns = [get_board_vector_repr(n) for n in next_states]
     piece_posns = [piece for subpiece_list in piece_posns for piece in subpiece_list]
     if any([s in piece_posns for s in solns]):
-      for s in next_states:
-        piece_posns = get_board_vector_repr(s)
+      for state in next_states:
+        piece_posns = get_board_vector_repr(state)
         if any([s in piece_posns for s in solns]):
-          states_sequence.append(board)
-          board = s ; break
+          states_sequence.append(state)
+          board = state ; break
 
       print('Found solution state!')
       states_sequence = list(remove_cycles(states_sequence))
