@@ -4,7 +4,7 @@
 Solving the Klotski block puzzle through random brute-force search.
 Author: Jorge Yanar
 """
-
+import time
 import numpy as np
 
 
@@ -277,31 +277,22 @@ def find_solution_path(board, solns):
   """ Runs brute-force search on a board to find a path from the given
   board state to one that satisfies the piece positions found in solns.
   """
-  nvisited = 0
-  states_sequence = []
+  nvisited = 1
+  states_sequence = [board]
   while True:
-    states_sequence.append(board)
+    next_states = get_next_states(board)
+    for state in next_states:
+      if any([s in get_board_vector_repr(state) for s in solns]):
+        print('Found solution state!')
+        states_sequence.append(state) ; nvisited += 1
+        states_sequence = remove_cycles(states_sequence)
+        return state, states_sequence, nvisited
+    board = next_states[np.random.randint(0, len(next_states))]
+    states_sequence.append(board) ; nvisited += 1
     if nvisited % 10000 == 0:
       print('States visited: {}'.format(nvisited))
       states_sequence = list(remove_cycles(states_sequence))
-
-    nvisited += 1
-    next_states = get_next_states(board)
-    piece_posns = [get_board_vector_repr(n) for n in next_states]
-    piece_posns = [piece for subpiece_list in piece_posns for piece in subpiece_list]
-    if any([s in piece_posns for s in solns]):
-      for state in next_states:
-        piece_posns = get_board_vector_repr(state)
-        if any([s in piece_posns for s in solns]):
-          states_sequence.append(state)
-          board = state ; break
-
-      print('Found solution state!')
-      states_sequence = list(remove_cycles(states_sequence))
-      break
-    else:
-      board = next_states[np.random.randint(0, len(next_states))]
-  return board, states_sequence, nvisited
+  return None
 
 
 ###############################################################################
@@ -329,7 +320,7 @@ def main():
   #   [3, 3, 0, 0]
   # ])
 
-  solns = [(4, 3, 0), (4, 3, 1), (4, 3, 2)]
+  solns = [(4, 3, 1)]
   solved_board, states_sequence, nvisited = find_solution_path(board, solns)
 
   print('Solved board:')
