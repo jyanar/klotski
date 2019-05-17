@@ -54,7 +54,7 @@ def get_next_states(board):
 def is_valid_move(board, piece, direction):
   """ Checks if a given move is valid. """
   p, i, j = piece
-  deltai, deltaj = direction
+  di, dj = direction
   if (i == 4 and direction == (1, 0) or
       i == 0 and direction == (-1, 0) or
       j == 0 and direction == (0, -1) or
@@ -68,47 +68,47 @@ def is_valid_move(board, piece, direction):
   else:
     # Single square
     if p == 1:
-      return board[i+deltai, j+deltaj] == 0
+      return board[i+di, j+dj] == 0
 
     # Vertical rectangle
     elif p == 2:
       # Left/Right
       if direction == (0, -1) or direction == (0, 1):
-        return (board[i,   j+deltaj] == 0 and
-                board[i+1, j+deltaj] == 0)
+        return (board[i,   j+dj] == 0 and
+                board[i+1, j+dj] == 0)
       # Up/Down
       elif direction == (-1, 0): # UP
-        return board[i+deltai, j] == 0
+        return board[i+di, j] == 0
       elif direction == (1, 0):  # DOWN
-        return board[i+1+deltai, j] == 0
+        return board[i+1+di, j] == 0
 
     # Horizontal rectangle
     elif p == 3:
       # Up/Down
       if direction == (-1, 0) or direction == (1, 0):
-        return board[i+deltai, j] == 0 and board[i+deltai, j+1] == 0
+        return board[i+di, j] == 0 and board[i+di, j+1] == 0
       # Left/Right
       elif direction == (0, -1):
-        return board[i, j+deltaj] == 0
+        return board[i, j+dj] == 0
       elif direction == (0, 1):
-        return board[i, j+1+deltaj] == 0
+        return board[i, j+1+dj] == 0
 
     # Large square block
     elif p == 4:
       # Up/Down
       if direction == (-1, 0):   # UP
-        return (board[i+deltai,   j] == 0 and
-                board[i+deltai, j+1] == 0)
+        return (board[i+di,   j] == 0 and
+                board[i+di, j+1] == 0)
       elif direction == (1, 0):  # DOWN
-        return (board[i+1+deltai,   j] == 0 and
-                board[i+1+deltai, j+1] == 0)
+        return (board[i+1+di,   j] == 0 and
+                board[i+1+di, j+1] == 0)
       # Left/Right
       elif direction == (0, -1): # LEFT
-        return (board[i,   j+deltaj] == 0 and
-                board[i+1, j+deltaj] == 0)
+        return (board[i,   j+dj] == 0 and
+                board[i+1, j+dj] == 0)
       elif direction == (0, 1):  # RIGHT
-        return (board[i,   j+1+deltaj] == 0 and
-                board[i+1, j+1+deltaj] == 0)
+        return (board[i,   j+1+dj] == 0 and
+                board[i+1, j+1+dj] == 0)
 
 
 def move_piece(board, piece, direction, check_validity=False):
@@ -117,46 +117,44 @@ def move_piece(board, piece, direction, check_validity=False):
   """
   board = board.copy()
   p, i, j = piece
-  deltai, deltaj = direction
+  di, dj = direction
   if check_validity and is_valid_move(board, piece, direction) == False:
     return None
   else:
     if p == 1:
-      board[i+deltai, j+deltaj] = 1
+      board[i+di, j+dj] = 1
       board[i, j] = 0
 
     elif p == 2:
       board[i,   j] = 0
       board[i+1, j] = 0
-      board[i+deltai,   j+deltaj] = 2
-      board[i+1+deltai, j+deltaj] = 2
+      board[i+di,   j+dj] = 2
+      board[i+1+di, j+dj] = 2
 
     elif p == 3:
       board[i,   j] = 0
       board[i, j+1] = 0
-      board[i+deltai,   j+deltaj] = 3
-      board[i+deltai, j+1+deltaj] = 3
+      board[i+di,   j+dj] = 3
+      board[i+di, j+1+dj] = 3
 
     elif p == 4:
       board[i,     j] = 0
       board[i,   j+1] = 0
       board[i+1,   j] = 0
       board[i+1, j+1] = 0
-      board[i+deltai,     j+deltaj] = 4
-      board[i+deltai,   j+1+deltaj] = 4
-      board[i+1+deltai,   j+deltaj] = 4
-      board[i+1+deltai, j+1+deltaj] = 4
+      board[i+di,     j+dj] = 4
+      board[i+di,   j+1+dj] = 4
+      board[i+1+di,   j+dj] = 4
+      board[i+1+di, j+1+dj] = 4
   return board
 
 
-def get_board_vector_repr(board, x_type_pieces=None):
+def get_board_vector_repr(board):
   """ Returns list of 3-tuples representing pieces and their locations
   from a matrix representation of a board state. For example, a
   vertical rectangle piece (represented by 2s) at location [1, 0] would
   be represented as (2, 1, 0). The [1, 0] refers to the i,j coordinates
   of the piece's top-left corner.
-
-  TODO: Optimize using np.where
   """
   board = board.copy()
   pieces = []
@@ -206,7 +204,9 @@ def get_board_matrix_repr(pieces):
 
 
 def get_board_pieces_of_type_a(board, a):
-  # TODO: Faster if we do the np.where trick?
+  """ Returns vector representations of all found pieces of type a on
+  board.
+  """
   board = board.copy()
   pieces = []
   for i in range(5):
@@ -222,7 +222,6 @@ def get_board_pieces_of_type_a(board, a):
   return pieces
 
 
-# Possibly merge these two ^  v ?
 def get_board_piece_at_ij(board, ij_tuple):
   """ Given a board and i,j, returns the vector representation
   of the piece at that position.
@@ -310,15 +309,6 @@ def main():
 
   print('Starting position:')
   print_board(board)
-
-  # Example state, right before solving
-  # board2 = np.array([
-  #   [2, 2, 2, 2],
-  #   [2, 2, 2, 2],
-  #   [1, 1, 4, 4],
-  #   [1, 1, 4, 4],
-  #   [3, 3, 0, 0]
-  # ])
 
   solns = [(4, 3, 1)]
   solved_board, states_sequence, nvisited = find_solution_path(board, solns)
