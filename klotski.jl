@@ -335,10 +335,10 @@ function main()
   println("Total number of states visited: ", nvisited);
   println("Final length of state sequence, after removing cycles: ", length(states_sequence));
 
-  println("Sequence:");
-  for i = 1 : length(states_sequence)
-    print_board(states_sequence[i]);
-  end
+  # println("Sequence:");
+  # for i = 1 : length(states_sequence)
+  #   print_board(states_sequence[i]);
+  # end
 
   save("klotski_path.jld", "states_sequence", states_sequence,
                               "solved_board", solved_board,
