@@ -4,15 +4,17 @@
 // Solving the Klotski block puzzle through random brute-force search.
 // Author: Jorge Yanar
 //
-
-use rand::Rng;
-use rand::seq::SliceRandom;
+// The rust implementation was a lot of fun to write. This was my first real
+// program with the language. Notable things: rust's `match` expressions are
+// quite nice and I wish they were available in all languages I use. The borrow-
+// checker will take a lot of getting used to, but I'm starting to see the
+// benefits that come from forcing bits of data to only "live" in one place in
+// your program.
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use itertools::Itertools;
-
-use std::any::type_name;
+use rand::Rng;
 
 
 fn main() {
@@ -26,8 +28,11 @@ fn main() {
     ];
     println!("Starting board: ");
     print_board(&board);
+
     let (states_seq, nvisited) = find_solution_path(board, solns);
+
     println!("Number of states visited: {}", nvisited);
+    println!("Final path length: {}", states_seq.len());
     println!("Final board state: ");
     print_board(&states_seq.last().unwrap());
 }
@@ -41,7 +46,7 @@ fn take_step(board: [[i32;4];5]) -> [[i32;4];5] {
 
 fn randomwalk(board: [[i32; 4]; 5], n_steps: usize) -> Vec<[[i32; 4]; 5]> {
     let mut states_seq: Vec<[[i32; 4]; 5]> = vec![board];
-    for i in 0 .. n_steps {
+    for _i in 0 .. n_steps {
         // let board = take_step(board);
         states_seq.push(take_step(states_seq[states_seq.len()-1]));
     }
@@ -64,18 +69,19 @@ fn find_solution_path(
             let ps = get_board_tuple_repr(&next_states[i]);
             let soln_found = ps.iter().any(|&p| solns.contains(&p));
             if soln_found {
-                println!("Found solution state!");
+                println!("Found solution state! nvisited: {}", nvisited);
                 states_seq.push(next_states[i].clone());
                 nvisited += 1;
-                // states_seq = remove_cycles(states_seq);
+                states_seq = remove_cycles(states_seq);
                 return (states_seq, nvisited);
             }
         }
         states_seq.push(next_states[rand::thread_rng().gen_range(0, next_states.len())].clone());
         nvisited += 1;
-        if nvisited % 10000 == 0 {
-            println!("States visited: {}", nvisited);
-            // states_seq = remove_cycles(states_seq);
+        if nvisited % 10_000 == 0 {
+            print!("States visited: {} ", nvisited);
+            states_seq = remove_cycles(states_seq);
+            println!("current path length: {}", states_seq.len());
         }
     }
 }
@@ -83,14 +89,43 @@ fn find_solution_path(
 
 /// Removes cycles from a given sequence of states
 fn remove_cycles(states_seq: Vec<[[i32; 4]; 5]>) -> Vec<[[i32; 4]; 5]> {
+    let mut states_seq = states_seq.clone();
+    let mut hashed_states = hash_states_seq(&states_seq);
+    let unique_states: Vec<u64> = hashed_states.clone().into_iter().unique().collect();
+    for i in 0 .. unique_states.len() {
+        // let state_idxs = hashed_states.into_iter().position(|&hs| ).unwrap();
+        // Couldn't figure out a nice way of finding all indices that match this
+        // unique state :(
+        let mut state_idxs = vec![];
+        for j in 0 .. hashed_states.len() {
+            if unique_states[i] == hashed_states[j] {
+                state_idxs.push(j as usize);
+            }
+        }
+        // If this board state occurs more than once, remove all states between
+        // the two occurrences and keep one of them
+        if state_idxs.len() > 1 {
+            let bad_idx = state_idxs[0]+1 .. state_idxs[state_idxs.len()-1];
+            hashed_states.drain(bad_idx.clone());
+            states_seq.drain(bad_idx.clone());
+        }
+    }
     return states_seq;
 }
 
 
-// fn hash_states_seq(states_seq: Vec<[[i32;4];5]>) -> Vec<u64> {
-//     let mut hasher = DefaultHasher::new();
-//     let sh = 
-// }
+/// Convert vector of boards into vector of hash values
+fn hash_states_seq(states_seq: &Vec<[[i32;4];5]>) -> Vec<u64> {
+    return states_seq.into_iter().map(|&b| hash_board(&b)).collect();
+}
+
+
+/// Hash a single board
+fn hash_board(board: &[[i32;4];5]) -> u64 {
+    let mut s = DefaultHasher::new();
+    board.hash(&mut s);
+    return s.finish();
+}
 
 
 /// Prints the board to stdout
@@ -136,11 +171,7 @@ fn get_next_states(board: [[i32; 4]; 5]) -> Vec<[[i32; 4]; 5]> {
     }
     // Remove duplicate pieces, as well as "empty" pieces
     let mut pieces: Vec<_> = pieces.into_iter().unique().collect();
-    // for p in 0 .. pieces.len() {
-    //     println!("{}", pieces[p].0);
-    // }
     pieces.retain(|&p| p.0 != 0);
-
     // Check if any of the identified pieces can move. If so, add resulting
     // board state to the list of possible future states
     let mut states: Vec<[[i32; 4]; 5]> = vec![];
@@ -186,7 +217,7 @@ fn get_board_piece_at_ij(
                                                                     .filter(|&p| p.2 == j)
                                                                     .collect();
                 for p in 0 .. candidates.len() {
-                    let pi = candidates[p].1; let pj = candidates[p].2;
+                    let pi = candidates[p].1;
                     if pi == i {
                         return (2, i, j);
                     } else if pi + 1 == i {
@@ -383,8 +414,4 @@ fn get_board_pieces_of_type(
     return pieces;
 }
 
-
-fn type_of<T>(_: T) -> &'static str {
-    type_name::<T>()
-}
 
